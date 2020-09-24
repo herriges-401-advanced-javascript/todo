@@ -1,7 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import TodoForm from './form.js';
 import TodoList from './list.js';
 import Navbar from 'react-bootstrap/Navbar'
+import Nav from 'react-bootstrap/Nav'
+import Container from 'react-bootstrap/Container'
+import Row from 'react-bootstrap/Row'
+import Col from 'react-bootstrap/Col'
+
+
+import useAjax from './hooks/use-ajax'
 
 import './todo.scss';
 import axios from 'axios';
@@ -9,9 +16,12 @@ import axios from 'axios';
 const api = 'http://localhost:3001/todo'
 const ToDo = () => {
   
-  const [list, setList] = useState([]);
+  const { list, setList, isLoading, setCrud} = useAjax()
+  // const [list, setList] = useState([]);
+  // const [isLoading, setIsLoading] = useState(false);
 
-  const _addItem = (item) => {
+
+  const _addItem = async (item) => {
     console.log('item', item)
     item._id = Math.random();
     item.complete = false;
@@ -19,13 +29,13 @@ const ToDo = () => {
       item.difficulty = 1;
     }
     setList([...list, item]);
-    axios.post(api, {
+    let data = await axios.post(api, {
       text : item.text,
       assignee : item.assignee,
       difficulty : item.difficulty,
       complete: item.complete,
-      id: item._id,
     })
+    console.log('data after post', data);
   }
 
   const _toggleComplete = async (id) => {
@@ -39,35 +49,48 @@ const ToDo = () => {
     }
   }
 
-  useEffect(async () => {
-    const response = await axios.get(api)
-    console.log('api data', response.data);
-    setList(response.data || []);
-  }, [])
-  
+
 
   return (
     <>
         <header>
-          
-          <h2>
-          There are {list.filter(item => !item.complete).length} Items To Complete
-          </h2>
+          <Navbar bg="primary" variant="dark">
+            <Nav className="mr-auto">
+              <Nav.Link href="#home">Home</Nav.Link>
+            </Nav>
+          </Navbar>
         </header>
-
-        <section className="todo">
-
+        <Container>
+          <Row>
+            <Col>
+                <Navbar bg="dark" variant="dark">
+                  <Nav className="mr-auto">
+                    <Navbar.Brand>
+                      <h2>
+                        There are {list.filter(item => !item.complete).length} Items To Complete
+                      </h2>
+                    </Navbar.Brand>
+                  </Nav>
+                </Navbar>
+            </Col>
+          </Row>
+          <Row>
+            <Col md={4}>
           <div>
             <TodoForm handleSubmit={_addItem} />
           </div>
 
-          <div>
-            <TodoList
-              list={list}
-              handleComplete={_toggleComplete}
-            />
-          </div>
-        </section>
+            </Col>
+            <Col md={8}>
+              <div>
+                <TodoList list={list} handleComplete={_toggleComplete}/>
+              </div>
+              <section className="todo">
+                {isLoading && <p>Loading...</p>}
+              </section>
+            </Col>
+          </Row>
+        </Container>
       </>
   )
 }
